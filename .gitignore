@@ -12,10 +12,10 @@
 !.project/plugins.sbt
 .settings/
 
-# sbt specific
 .cache
 .history
 .lib/
+bin/**
 dist/*
 target/
 lib_managed/
