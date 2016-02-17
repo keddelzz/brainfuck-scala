@@ -1,20 +1,52 @@
 
 
-import scala.util.{ Failure, Success }
+import scala.util.{ Failure, Success, Try }
 import scrainfuck._
 import scala.io.StdIn
 import java.io.File
+import BFParser.{ parseFile, parseString } 
+import scala.io.Source
 
 object Brainfuck {
   
-  def main(args: Array[String]): Unit =
-    if (args.length != 1) {
-      println("please specify a file!")
-      sys.exit(1)
-    } else BFParser.parseFile(new File(args.head)) match {
+  private def print(x: Any) = {
+    Predef.print(x)
+    System.out.flush()
+  }
+  
+  private def runOrPrintError(insrs: Try[List[BFInstr]]) = 
+    insrs match {
       case Success(r) => run(r)
       case Failure(e) => println(e.getMessage)
     }
+  
+  private def printHelp(): Unit = {
+    println(":exit, :quit, :q\texit repl")
+    println(":clear, :c\t\tclear input buffer")
+    println(":run, :r\t\trun buffered program and clear input buffer")
+    println(":help\t\t\tshow help")
+  }
+  
+  def main(args: Array[String]): Unit =
+    if (args.length != 1) {
+      val bldr = new StringBuilder()
+      printHelp()
+      println()
+    	print("> ")
+      for (line <- Source.stdin.getLines()) {
+        line match {
+          case ":help" => printHelp()
+          case ":exit" | ":quit" | ":q" => sys.exit(0)
+          case ":clear" | ":c"          => bldr.clear()
+          case ":run" | ":r" =>
+            runOrPrintError(parseString(bldr.toString))
+            bldr.clear()
+            println()
+          case s => bldr ++= s
+        }
+        print("> ")
+      }
+    } else runOrPrintError(parseFile(new File(args.head)))
   
   private def zeroise(band: Map[Int, Char], ptr: Int): Char =
     band.get(ptr).getOrElse(0.toChar)

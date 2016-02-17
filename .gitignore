@@ -20,3 +20,4 @@ dist/*
 target/
 lib_managed/
 src_managed/
+/bin/
