@@ -21,11 +21,14 @@ object Brainfuck {
     }
   
   private def printHelp(): Unit = {
+    println(":<n>x<s>\t\trepeat the string <s> <n> times")
+		println(":clear, :c\t\tclear input buffer")
     println(":exit, :quit, :q\texit repl")
-    println(":clear, :c\t\tclear input buffer")
-    println(":run, :r\t\trun buffered program and clear input buffer")
     println(":help\t\t\tshow help")
+    println(":run, :r\t\trun buffered program and clear input buffer")
   }
+  
+  private val repeat = ":([0-9]+)x(.*)".r
   
   def main(args: Array[String]): Unit =
     if (args.length != 1) {
@@ -35,6 +38,7 @@ object Brainfuck {
     	print("> ")
       for (line <- Source.stdin.getLines()) {
         line match {
+          case repeat(n, str) => for (_ <- 0 until n.toInt) bldr ++= str
           case ":help" => printHelp()
           case ":exit" | ":quit" | ":q" => sys.exit(0)
           case ":clear" | ":c"          => bldr.clear()
