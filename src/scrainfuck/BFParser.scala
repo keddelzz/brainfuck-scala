@@ -1,41 +1,39 @@
 package scrainfuck
 
-import scala.util.parsing.combinator.RegexParsers
+import java.io.{ ByteArrayInputStream, File, FileInputStream, Reader, InputStreamReader }
 import java.nio.charset.StandardCharsets
 
-object BFParser {
-  import java.io.{ ByteArrayInputStream, File, FileInputStream, Reader, InputStreamReader }
-  import scala.util.{ Try }
+import scala.util.{ Try }
+import scala.util.parsing.combinator.RegexParsers
 
-  private def parser(desc: String, input: Reader) = {
-    val parser = new BFParser()
-    parser.parseAll(parser.program, input) match {
+object BFParser {
+
+  private def handleResult[T](desc: String, parser: BFParser)(result: parser.ParseResult[T]): Try[T] =
+    result match {
       case parser.Success(res, _) => util.Success(res)
       case parser.NoSuccess(msg, input) =>
         val (line, col) = (input.pos.line, input.pos.column)
         val lstr = input.pos.longString
         util.Failure(new RuntimeException(s"Error in '$desc' at line $line column $col.\n$msg\n$lstr"))
     }
+
+  private def parse(desc: String, input: Either[Reader, CharSequence]) = {
+    val parser = new BFParser()
+    val result = input.fold(parser.parseAll(parser.program, _), parser.parseAll(parser.program, _))
+    handleResult(desc, parser)(result)
   }
-  
+
   def parseFile(file: File): Try[List[BFInstr]] =
     for {
       fis <- Try(new FileInputStream(file))
       isr <- Try(new InputStreamReader(fis))
-      res <- parser(file.getAbsolutePath, isr)
+      res <- parse(file.getAbsolutePath, Left(isr))
       _ = isr.close()
       _ = fis.close()
     } yield res
-    
+
   def parseString(s: String): Try[List[BFInstr]] =
-    for {
-      bts <- Try(s.getBytes(StandardCharsets.UTF_8))
-      inp <- Try(new ByteArrayInputStream(bts))
-      isr <- Try(new InputStreamReader(inp))
-      res <- parser("string", isr)
-      _ = isr.close()
-      _ = inp.close()   
-    } yield res
+    parse("string", Right(s))
 }
 
 private class BFParser() extends RegexParsers {
