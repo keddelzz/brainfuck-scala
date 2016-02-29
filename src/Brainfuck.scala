@@ -79,13 +79,10 @@ object Brainfuck {
         val input = new File(args.head)
         val output = new File(input.getParentFile,
           stripExtension(input.getName) + "." + transpiler.fileExtension)
-        parseFile(input) match {
-          case Success(r) =>
-            transpiler.transpile(r, output) match {
-              case Success(_) =>
-              case Failure(t) => println(t.getMessage); sys.exit(1)
-            }
-          case Failure(e) => println(e.getMessage); sys.exit(1)
+        val transpileResult = parseFile(input).flatMap(transpiler.transpile(_, output))
+        transpileResult match {
+          case Failure(t) => println(t.getMessage); sys.exit(1)
+          case Success(_) =>
         }
       }
     }
